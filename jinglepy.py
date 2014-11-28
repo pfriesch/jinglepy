@@ -26,13 +26,29 @@ class GameTimer():
         self.breakLength = c.breakLength*60
         self.breakJingle = c.breakJingle
         self.sixtySecondsJingle = c.sixtySecondsJingle
+        self.clemVol = iface.VolumeGet()
 
     #mplayer subprocess prototype
     def mPlayer(self, audiofile):
         self.mplayer = subprocess.Popen(["mplayer" , "-quiet" , audiofile ] , stdout=subprocess.PIPE , stderr=subprocess.PIPE ) 
+        self.mplayer.wait()
     
+    def clemChangeVol(self,startVol,endVol):
+        diff = startVol - endVol
+        steps = 20
+        step = diff/steps
+        curVol = startVol
+        for i in range(steps) :
+            curVol = curVol - step
+            iface.VolumeSet(curVol)
+            time.sleep(.1)
+
     def playSixty(self):
+        self.clemVol = iface.VolumeGet()
+        self.clemChangeVol(self.clemVol,0)
         self.mPlayer(self.sixtySecondsJingle)
+        time.sleep(5)
+        self.clemChangeVol(0,self.clemVol)
 
     def matchStart(self):
         self.MatchStartTime=time.time()
