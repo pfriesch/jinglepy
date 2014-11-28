@@ -1,0 +1,7 @@
+*.mp3
+*.webm
+*.m4a
+*.txt
+
+__pycache__
+*.pyc
