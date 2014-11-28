@@ -11,12 +11,12 @@ c = config
 session_bus = dbus.SessionBus()
 
 try:
-    player = session_bus.get_object('org.mpris.clementine','/Player')
+    player = session_bus.get_object('org.mpris.clementine' , '/Player')
 except:
     #launch clementine if needed
-    clem = subprocess.Popen('clementine')
+    clem = subprocess.Popen('clementine' , stdout=subprocess.PIPE , stderr=subprocess.PIPE)
     time.sleep(2)
-    player = session_bus.get_object('org.mpris.clementine','/Player')
+    player = session_bus.get_object('org.mpris.clementine' , '/Player')
 
 iface = dbus.Interface(player,dbus_interface='org.freedesktop.MediaPlayer')
 
@@ -29,14 +29,14 @@ class GameTimer():
 
     #mplayer subprocess prototype
     def mPlayer(self, audiofile):
-        self.mplayer = subprocess.Popen(["mplayer" , "-quiet" , audiofile] ,stdout=subprocess.PIPE, stderr=subprocess.PIPE) 
+        self.mplayer = subprocess.Popen(["mplayer" , "-quiet" , audiofile ] , stdout=subprocess.PIPE , stderr=subprocess.PIPE ) 
     
     def playSixty(self):
         self.mPlayer(self.sixtySecondsJingle)
 
     def matchStart(self):
         self.MatchStartTime=time.time()
-        self.matchThread = threading.Timer(self.gameLength-60, self.playSixty)
+        self.matchThread = threading.Timer(self.gameLength-60 , self.playSixty)
         self.matchThread.start()
 
 
@@ -62,8 +62,8 @@ def main(stdscr):
 #        try:
 #            options[k]()
 #        except:
-#            print("no function assigned")
-#
+#            print("something went wrong")
+
         time.sleep(1)
 
 
