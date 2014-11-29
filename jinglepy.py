@@ -1,7 +1,7 @@
 import dbus
 import subprocess
 import threading
-import time
+import time , datetime
 import curses, curses.panel
 import config
 import sys
@@ -29,6 +29,8 @@ class GameTimer():
         self.breakJingle = c.breakJingle
         self.sixtySecondsJingle = c.sixtySecondsJingle
         self.clemVol = iface.VolumeGet()
+        self.matchStartTime = 0
+        self.matchEndTime = 0
 
     #mplayer subprocess prototype
     def mPlayer(self, audiofile):
@@ -53,11 +55,21 @@ class GameTimer():
         self.clemChangeVol(0,self.clemVol)
 
     def matchStart(self):
-        self.MatchStartTime=time.time()
-        self.matchThread = threading.Timer(self.gameLength-60 , self.playSixty)
+        self.matchStartTime=time.time()
+        self.matchEndTime=self.matchStartTime + self.gameLength
+        self.matchThread = threading.Timer( self.gameLength-60 , self.playSixty )
         self.matchThread.start()
 
+    def matchTimeStartStr(self):
+        return time.strftime("%H:%M:%S" , time.localtime( self.matchStartTime ) )
 
+    def matchTimeEndStr(self):
+        return time.strftime("%H:%M:%S" , time.localtime( self.matchEndTime ) )
+
+    def matchTimeRemaining(self):
+        secs = abs( int( self.matchEndTime - time.time() ) )
+        if secs > 3600 : secs = 0
+        return str( datetime.timedelta( seconds=int( secs ) ) )
 
 class Ui:
     def __init__(self):
@@ -67,13 +79,14 @@ class Ui:
         curses.curs_set(0)
         self.stdscr.keypad(1)
 
-        self.win1 = curses.newwin(30,20,0,0)
+        self.sss=self.stdscr.getmaxyx()
+        self.win1 = curses.newwin(self.sss[0]-10,self.sss[1]-30,0,0)
         self.win1.border(0)
-        self.win2 = curses.newwin(30,20,0,22)
+        self.win2 = curses.newwin(self.sss[0]-10,30,0,self.sss[1]-30)
         self.win2.border(0)
         
         self.win1.addstr(1,1,"win1")
-        self.win2.addstr(1,1,"win2")
+        self.win2.addstr(1,1,"Match:")
 
     def refresh (self):
         self.win1.refresh()
@@ -86,6 +99,7 @@ class Ui:
         curses.echo()
         curses.endwin()
         exit(0)
+
 
 class Feeder:
     def __init__(self):
@@ -100,8 +114,8 @@ class Feeder:
         self.feed()
 
     def stop (self):
-        self.ui.quitUi()
         self.running = False
+        self.ui.quitUi()
 
     def feed(self):
         while self.running :
@@ -116,10 +130,14 @@ class Feeder:
                 try:
                     options[self.key]()
                 except:
-                    self.ui.win2.addstr(2,1,"Command is unknown or failed.")
+                    self.ui.win1.addstr(10,1,"Command is unknown or failed.")
         
             self.ui.win1.addstr(2,1,"Count is:" + str(self.count))
             self.ui.win1.addstr(3,1,"Last input:" + self.key)
+
+            self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.matchTimeStartStr() ) 
+            self.ui.win2.addstr(3,1,"Match ends     @ " + self.gt.matchTimeEndStr() ) 
+            self.ui.win2.addstr(4,1,"Remaining Time :  " + self.gt.matchTimeRemaining() )
             self.ui.refresh()
             time.sleep(0.1)
             self.count += 1
