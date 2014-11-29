@@ -2,8 +2,10 @@ import dbus
 import subprocess
 import threading
 import time
-from curses import wrapper
+import curses, curses.panel
 import config
+import sys
+import select
 
 c = config
 
@@ -57,32 +59,75 @@ class GameTimer():
 
 
 
-def main(stdscr):
-    
-    #init GameTimer
-    gt=GameTimer()
-    
-    stdscr.clear()
-    while True :
-        stdscr.refresh()
-        k=stdscr.getkey()
+class Ui:
+    def __init__(self):
+        self.stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        curses.curs_set(0)
+        self.stdscr.keypad(1)
+
+        self.win1 = curses.newwin(30,20,0,0)
+        self.win1.border(0)
+        self.win2 = curses.newwin(30,20,0,22)
+        self.win2.border(0)
         
-        options = { "P" : iface.Play ,
-                    "S" : iface.Stop ,
-                    "s" : gt.matchStart ,
-                    "p" : gt.playSixty
-                }
+        self.win1.addstr(1,1,"win1")
+        self.win2.addstr(1,1,"win2")
 
-        options[k]()
+    def refresh (self):
+        self.win1.refresh()
+        self.win2.refresh()
 
-#        try:
-#            options[k]()
-#        except:
-#            print("something went wrong")
+    def quitUi(self):
+        curses.nocbreak()
+        self.stdscr.keypad(0)
+        curses.curs_set(1)
+        curses.echo()
+        curses.endwin()
+        exit(0)
 
-        time.sleep(1)
+class Feeder:
+    def __init__(self):
+        self.running = False
+        self.ui = Ui()
+        self.gt = GameTimer()
+        self.count = 0
+        self.key = "i"
+    
+    def run(self):
+        self.running = True
+        self.feed()
+
+    def stop (self):
+        self.ui.quitUi()
+        self.running = False
+
+    def feed(self):
+        while self.running :
+            while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+                self.key = sys.stdin.read(1)
+                options = { "p" : self.gt.playSixty ,
+                        "P" : iface.Play ,
+                        "q" : self.stop ,
+                        "s" : self.gt.matchStart ,
+                        "S" : iface.Stop 
+                        }
+                try:
+                    options[self.key]()
+                except:
+                    self.ui.win2.addstr(2,1,"Command is unknown or failed.")
+        
+            self.ui.win1.addstr(2,1,"Count is:" + str(self.count))
+            self.ui.win1.addstr(3,1,"Last input:" + self.key)
+            self.ui.refresh()
+            time.sleep(0.1)
+            self.count += 1
+
 
 
 #init curses
-wrapper(main)
-
+#wrapper(main)
+if __name__ == "__main__":
+    f = Feeder()
+    f.run()
