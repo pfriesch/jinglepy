@@ -1,3 +1,7 @@
+# Times in minutes
+gameLength = 2
+nLastMinutes = 5
+breakLength = 3
 
 
 # Time of day the first match starts. String has to be of the format "dd.mm.yy HH:MM:SS"

@@ -7,7 +7,12 @@ import config
 import sys
 import select
 
+from gi.repository import Gst
+
 c = config
+
+
+Gst.init(sys.argv)
 
 #init Dbus interface
 session_bus = dbus.SessionBus()
@@ -22,21 +27,36 @@ except:
 
 iface = dbus.Interface(player,dbus_interface='org.freedesktop.MediaPlayer')
 
+class Jingles():
+    def __init__(self,audiofile):
+        self.player = Gst.ElementFactory.make("playbin","player")
+        self.player.set_property("uri",audiofile)
+        self.player.set_state(Gst.State.PLAYING)
+        time.sleep(0.1)
+        self.duration=round (self.player.query_duration(Gst.Format.TIME)[1] / Gst.SECOND , 1)
+        self.player.set_state(Gst.State.NULL)
+    
+    def play(self):
+        self.player.set_state(Gst.State.PLAYING)
+
+    def pause(self):
+        self.player.set_state(Gst.State.PAUSE)
+
+    def stop(self):
+        self.player.set_state(Gst.State.NULL)
+
 class GameTimer():
     def __init__(self):
         self.gameLength = c.gameLength*60
         self.breakLength = c.breakLength*60
-        self.breakJingle = c.breakJingle
-        self.sixtySecondsJingle = c.sixtySecondsJingle
         self.clemVol = iface.VolumeGet()
         self.matchStartTime = 0
         self.matchEndTime = 0
+        self.jingles={}
+        for name in c.jingles:
+            jingle = Jingles( c.jingles[name])
+            self.jingles[name] = jingle
 
-    #mplayer subprocess prototype
-    def mPlayer(self, audiofile):
-        self.mplayer = subprocess.Popen(["mplayer" , "-quiet" , audiofile ] , stdout=subprocess.PIPE , stderr=subprocess.PIPE ) 
-        self.mplayer.wait()
-    
     def clemChangeVol(self,startVol,endVol):
         diff = startVol - endVol
         steps = 20
@@ -45,20 +65,24 @@ class GameTimer():
         for i in range(steps) :
             curVol = curVol - step
             iface.VolumeSet(curVol)
-            time.sleep(.1)
+            time.sleep(.05)
 
-    def playSixty(self):
+    def playJingle(self,j,pause=1):
+        jingle = self.jingles[j]
         self.clemVol = iface.VolumeGet()
         self.clemChangeVol(self.clemVol,0)
-        self.mPlayer(self.sixtySecondsJingle)
-        time.sleep(5)
+        jingle.stop()
+        jingle.play()
+        time.sleep( jingle.duration + pause)
         self.clemChangeVol(0,self.clemVol)
 
     def matchStart(self):
+        self.matchEndThread = threading.Timer( 0 , self.playJingle , args = ("matchStart",1) )
+        self.matchEndThread.start()
         self.matchStartTime=time.time()
         self.matchEndTime=self.matchStartTime + self.gameLength
-        self.matchThread = threading.Timer( self.gameLength-60 , self.playSixty )
-        self.matchThread.start()
+        self.matchEndThread = threading.Timer( self.gameLength-self.jingles["sixtySecond"].duration , self.playJingle , args = ("sixtySecond",5) )
+        self.matchEndThread.start()
 
     def matchTimeStartStr(self):
         return time.strftime("%H:%M:%S" , time.localtime( self.matchStartTime ) )
@@ -121,16 +145,16 @@ class Feeder:
         while self.running :
             while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                 self.key = sys.stdin.read(1)
-                options = { "p" : self.gt.playSixty ,
+                options = {
                         "P" : iface.Play ,
                         "q" : self.stop ,
                         "s" : self.gt.matchStart ,
                         "S" : iface.Stop 
                         }
-                try:
-                    options[self.key]()
-                except:
-                    self.ui.win1.addstr(10,1,"Command is unknown or failed.")
+#                try:
+                options[self.key]()
+#                except:
+#                    self.ui.win1.addstr(10,1,"Command is unknown or failed." +str( sys.exc_info()[0]) )
         
             self.ui.win1.addstr(2,1,"Count is:" + str(self.count))
             self.ui.win1.addstr(3,1,"Last input:" + self.key)
@@ -147,5 +171,6 @@ class Feeder:
 #init curses
 #wrapper(main)
 if __name__ == "__main__":
+
     f = Feeder()
     f.run()
