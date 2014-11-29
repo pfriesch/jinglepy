@@ -45,6 +45,7 @@ class Jingles():
     def stop(self):
         self.player.set_state(Gst.State.NULL)
 
+
 class GameTimer():
     def __init__(self):
         self.gameLength = c.gameLength*60
@@ -75,14 +76,15 @@ class GameTimer():
         jingle.play()
         time.sleep( jingle.duration + pause)
         self.clemChangeVol(0,self.clemVol)
+        return 0
 
     def matchStart(self):
-        self.matchEndThread = threading.Timer( 0 , self.playJingle , args = ("matchStart",1) )
-        self.matchEndThread.start()
+        matchStartThread = threading.Timer( 0 , self.playJingle , args = ("matchStart",1) )
+        matchStartThread.start()
         self.matchStartTime=time.time()
         self.matchEndTime=self.matchStartTime + self.gameLength
-        self.matchEndThread = threading.Timer( self.gameLength-self.jingles["sixtySecond"].duration , self.playJingle , args = ("sixtySecond",5) )
-        self.matchEndThread.start()
+        matchEndThread = threading.Timer( self.gameLength-self.jingles["matchStart"].duration , self.playJingle , args = ("matchStart",5) )
+        matchEndThread.start()
 
     def matchTimeStartStr(self):
         return time.strftime("%H:%M:%S" , time.localtime( self.matchStartTime ) )
@@ -95,6 +97,7 @@ class GameTimer():
         if secs > 3600 : secs = 0
         return str( datetime.timedelta( seconds=int( secs ) ) )
 
+
 class Ui:
     def __init__(self):
         self.stdscr = curses.initscr()
@@ -105,9 +108,7 @@ class Ui:
 
         self.sss=self.stdscr.getmaxyx()
         self.win1 = curses.newwin(self.sss[0]-10,self.sss[1]-30,0,0)
-        self.win1.border(0)
         self.win2 = curses.newwin(self.sss[0]-10,30,0,self.sss[1]-30)
-        self.win2.border(0)
         
         self.win1.addstr(1,1,"win1")
         self.win2.addstr(1,1,"Match:")
@@ -155,21 +156,26 @@ class Feeder:
                 options[self.key]()
 #                except:
 #                    self.ui.win1.addstr(10,1,"Command is unknown or failed." +str( sys.exc_info()[0]) )
-        
+
+            if self.count%7 == 0:
+                self.ui.win1.clear()
+                self.ui.win2.clear()
+
+                self.ui.win1.border(0)
+                self.ui.win2.border(0)
+
             self.ui.win1.addstr(2,1,"Count is:" + str(self.count))
             self.ui.win1.addstr(3,1,"Last input:" + self.key)
+            self.ui.win1.addstr(4,1,"Threads:" + str(threading.enumerate()))
 
             self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.matchTimeStartStr() ) 
             self.ui.win2.addstr(3,1,"Match ends     @ " + self.gt.matchTimeEndStr() ) 
             self.ui.win2.addstr(4,1,"Remaining Time :  " + self.gt.matchTimeRemaining() )
             self.ui.refresh()
-            time.sleep(0.1)
             self.count += 1
+            time.sleep(0.1)
 
 
-
-#init curses
-#wrapper(main)
 if __name__ == "__main__":
 
     f = Feeder()
