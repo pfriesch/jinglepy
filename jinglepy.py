@@ -59,16 +59,36 @@ class Ui:
         curses.curs_set(0)
         self.stdscr.keypad(1)
 
-        self.sss=self.stdscr.getmaxyx()
-        self.win1 = curses.newwin(self.sss[0]-10,self.sss[1]-30,0,0)
-        self.win2 = curses.newwin(self.sss[0]-10,30,0,self.sss[1]-30)
+        self.sss = self.stdscr.getmaxyx()
+
+        self.win1 = curses.newwin(self.sss[0] - 10, self.sss[1] - 30, 0, 0)
+        self.win2 = curses.newwin(self.sss[0] - 10, 30, 0, self.sss[1] - 30)
+        self.pan2 = curses.panel.new_panel(self.win2)
+        self.win3 = curses.newwin(self.sss[0] - 10, 30, 0, self.sss[1] - 30)
+        self.pan3 = curses.panel.new_panel(self.win3)
         
-        self.win1.addstr(1,1,"win1")
-        self.win2.addstr(1,1,"Match:")
+        self.pan2.hide()
 
     def refresh (self):
+        curses.panel.update_panels()
         self.win1.refresh()
         self.win2.refresh()
+        self.win3.refresh()
+
+    def switch_pan(self):
+
+        def switch(fromPanel, toPanel):
+            fromPanel.bottom()
+            fromPanel.hide()
+            toPanel.top()
+            toPanel.show()
+
+        if self.pan2.hidden():
+            switch(self.pan3, self.pan2)
+        else:
+            switch(self.pan2, self.pan3)
+
+        self.refresh()
 
     def quitUi(self):
         curses.nocbreak()
@@ -86,6 +106,8 @@ class GameTimer():
         self.clemVol = iface.VolumeGet()
         self.matchStartTime = 0
         self.matchEndTime = 0
+        self.breakStartTime = 0
+        self.breakEndTime = 0
         self.jingles={}
         for name in c.jingles:
             jingle = Jingles( c.jingles[name])
@@ -133,8 +155,11 @@ class GameTimer():
     def matchTimeEndStr(self):
         return time.strftime("%H:%M:%S" , time.localtime( self.matchEndTime ) )
 
-    def matchTimeRemaining(self):
-        secs = abs( int( self.matchEndTime - time.time() ) )
+    def TimeStr(self, t):
+        return time.strftime("%H:%M:%S" , time.localtime( t ) )
+
+    def TimeRemaining(self, t):
+        secs = abs( int( t - time.time() ) )
         if secs > 3600 : secs = 0
         return str( datetime.timedelta( seconds=int( secs ) ) )
 
@@ -160,6 +185,7 @@ class Feeder:
             while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                 self.key = sys.stdin.read(1)
                 options = {
+                        "l" : self.ui.switch_pan , 
                         "M" : og,
                         "P" : iface.Play ,
                         "q" : self.stop ,
@@ -172,21 +198,33 @@ class Feeder:
 #                except:
 #                    self.ui.win1.addstr(10,1,"Command is unknown or failed." +str( sys.exc_info()[0]) )
 
-            if self.count%7 == 0:
+            if self.count%1000 == 0:
                 self.ui.win1.clear()
                 self.ui.win2.clear()
+                self.ui.win3.clear()
 
                 self.ui.win1.border(0)
                 self.ui.win2.border(0)
+                self.ui.win3.border(0)
+
+                self.ui.win1.addstr(1,1,"win1")
+                self.ui.win2.addstr(1,1,"Match:")
+                self.ui.win3.addstr(1,1,"Break:")
+
 
             self.ui.win1.addstr(2,1,"Count is:" + str(self.count))
             self.ui.win1.addstr(3,1,"Last input:" + self.key)
             self.ui.win1.addstr(4,1,"Threads:" + str(threading.enumerate()))
 
 
-            self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.matchTimeStartStr() ) 
-            self.ui.win2.addstr(3,1,"Match ends     @ " + self.gt.matchTimeEndStr() ) 
-            self.ui.win2.addstr(4,1,"Remaining Time :  " + self.gt.matchTimeRemaining() )
+            self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.TimeStr( self.gt.matchStartTime ) )
+            self.ui.win2.addstr(3,1,"Match ends     @ " + self.gt.TimeStr( self.gt.matchEndTime ) ) 
+            self.ui.win2.addstr(4,1,"Remaining Time :  " + self.gt.TimeRemaining( self.gt.matchEndTime ) )
+
+            self.ui.win3.addstr(2,1,"Break started  @ " + self.gt.TimeStr( self.gt.breakStartTime ) ) 
+            self.ui.win3.addstr(3,1,"Break ends     @ " + self.gt.TimeStr( self.gt.breakEndTime) ) 
+            self.ui.win3.addstr(4,1,"Remaining Time :  " + self.gt.TimeRemaining(  self.gt.breakEndTime ) )
+
             self.ui.refresh()
             self.count += 1
             time.sleep(0.1)
