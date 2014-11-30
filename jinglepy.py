@@ -101,14 +101,17 @@ class GameTimer():
             iface.VolumeSet(curVol)
             time.sleep(.05)
 
-    def playJingle(self,j,pause=1):
+    def playJingle(self,j,fadeout=True,fadein=True):
         jingle = self.jingles[j]
-        self.clemVol = iface.VolumeGet()
-        self.clemChangeVol(self.clemVol,0)
+        curClemVol = iface.VolumeGet()
+        if curClemVol != 0 & fadeout :
+            self.clemVol == curClemVol
+            self.clemChangeVol(self.clemVol,0)
         jingle.stop()
         jingle.play()
-        time.sleep( jingle.duration + pause)
-        self.clemChangeVol(0,self.clemVol)
+        time.sleep( jingle.duration )
+        if fadein :
+            self.clemChangeVol(0,self.clemVol)
         return 0
 
     def matchStart(self):
