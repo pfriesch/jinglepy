@@ -108,6 +108,7 @@ class GameTimer():
         self.matchEndTime = 0
         self.breakStartTime = 0
         self.breakEndTime = 0
+        self.turnamentState = None
         self.jingles={}
         for name in c.jingles:
             jingle = Jingles( c.jingles[name])
@@ -212,9 +213,10 @@ class Feeder:
                 self.ui.win3.addstr(1,1,"Break:")
 
 
-            self.ui.win1.addstr(2,1,"Count is:" + str(self.count))
-            self.ui.win1.addstr(3,1,"Last input:" + self.key)
-            self.ui.win1.addstr(4,1,"Threads:" + str(threading.enumerate()))
+            self.ui.win1.addstr(2,1,"Count is: " + str(self.count) )
+            self.ui.win1.addstr(3,1,"Last input: " + self.key)
+            self.ui.win1.addstr(4,1,"Turnament State: " + str( self.gt.turnamentState ) )
+            self.ui.win1.addstr(5,1,"Threads:" + str(threading.enumerate() ) )
 
 
             self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.TimeStr( self.gt.matchStartTime ) )
