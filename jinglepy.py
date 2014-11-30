@@ -51,6 +51,34 @@ class Jingles():
         self.player.set_state(Gst.State.NULL)
 
 
+class Ui:
+    def __init__(self):
+        self.stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        curses.curs_set(0)
+        self.stdscr.keypad(1)
+
+        self.sss=self.stdscr.getmaxyx()
+        self.win1 = curses.newwin(self.sss[0]-10,self.sss[1]-30,0,0)
+        self.win2 = curses.newwin(self.sss[0]-10,30,0,self.sss[1]-30)
+        
+        self.win1.addstr(1,1,"win1")
+        self.win2.addstr(1,1,"Match:")
+
+    def refresh (self):
+        self.win1.refresh()
+        self.win2.refresh()
+
+    def quitUi(self):
+        curses.nocbreak()
+        self.stdscr.keypad(0)
+        curses.curs_set(1)
+        curses.echo()
+        curses.endwin()
+        exit(0)
+
+
 class GameTimer():
     def __init__(self):
         self.gameLength = c.gameLength*60
@@ -101,34 +129,6 @@ class GameTimer():
         secs = abs( int( self.matchEndTime - time.time() ) )
         if secs > 3600 : secs = 0
         return str( datetime.timedelta( seconds=int( secs ) ) )
-
-
-class Ui:
-    def __init__(self):
-        self.stdscr = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        curses.curs_set(0)
-        self.stdscr.keypad(1)
-
-        self.sss=self.stdscr.getmaxyx()
-        self.win1 = curses.newwin(self.sss[0]-10,self.sss[1]-30,0,0)
-        self.win2 = curses.newwin(self.sss[0]-10,30,0,self.sss[1]-30)
-        
-        self.win1.addstr(1,1,"win1")
-        self.win2.addstr(1,1,"Match:")
-
-    def refresh (self):
-        self.win1.refresh()
-        self.win2.refresh()
-
-    def quitUi(self):
-        curses.nocbreak()
-        self.stdscr.keypad(0)
-        curses.curs_set(1)
-        curses.echo()
-        curses.endwin()
-        exit(0)
 
 
 class Feeder:
