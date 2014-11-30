@@ -115,12 +115,17 @@ class GameTimer():
         return 0
 
     def matchStart(self):
-        matchStartThread = threading.Timer( 0 , self.playJingle , args = ("matchStart",1) )
+        matchStartThread = threading.Timer( 0 , self.playJingle , args = ("matchStart" ) )
         matchStartThread.start()
-        self.matchStartTime=time.time()
-        self.matchEndTime=self.matchStartTime + self.gameLength
-        matchEndThread = threading.Timer( self.gameLength-self.jingles["matchStart"].duration , self.playJingle , args = ("matchStart",5) )
+        self.matchStartTime = time.time()
+        self.matchEndTime = self.matchStartTime + self.gameLength
+        matchEndThread = threading.Timer( self.gameLength - self.jingles["matchStart"].duration - 1 , self.playJingle , args = ("matchStart") )
         matchEndThread.start()
+
+    def breakStart(self):
+        self.breakStartTime = time.time()
+        self.breakEndTime = breakStartTime + self.breakLength
+        breakEndThread = threading.Timer( self.breakLength - self.jingles["breakEnd"].duration - 1 , self.playJingle , args = ( "breakEnd" ) )
 
     def matchTimeStartStr(self):
         return time.strftime("%H:%M:%S" , time.localtime( self.matchStartTime ) )
