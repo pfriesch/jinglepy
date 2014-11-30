@@ -6,13 +6,18 @@ import curses, curses.panel
 import config
 import sys
 import select
+import objgraph
+
 
 from gi.repository import Gst
 
+Gst.init(sys.argv)
+
 c = config
 
+def og():
+    objgraph.show_refs([f])
 
-Gst.init(sys.argv)
 
 #init Dbus interface
 session_bus = dbus.SessionBus()
@@ -147,10 +152,12 @@ class Feeder:
             while sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
                 self.key = sys.stdin.read(1)
                 options = {
+                        "M" : og,
                         "P" : iface.Play ,
                         "q" : self.stop ,
                         "s" : self.gt.matchStart ,
                         "S" : iface.Stop 
+
                         }
 #                try:
                 options[self.key]()
@@ -167,6 +174,7 @@ class Feeder:
             self.ui.win1.addstr(2,1,"Count is:" + str(self.count))
             self.ui.win1.addstr(3,1,"Last input:" + self.key)
             self.ui.win1.addstr(4,1,"Threads:" + str(threading.enumerate()))
+
 
             self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.matchTimeStartStr() ) 
             self.ui.win2.addstr(3,1,"Match ends     @ " + self.gt.matchTimeEndStr() ) 
