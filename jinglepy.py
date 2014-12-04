@@ -7,7 +7,7 @@ import config
 import sys
 import select
 import objgraph
-
+from queue import Queue
 
 from gi.repository import Gst
 
@@ -18,6 +18,7 @@ c = config
 def og():
     objgraph.show_refs([f])
 
+q = Queue
 
 #init Dbus interface
 session_bus = dbus.SessionBus()
@@ -99,16 +100,22 @@ class Ui:
         exit(0)
 
 
-class GameTimer():
-    def __init__(self):
-        self.gameLength = c.gameLength*60
-        self.breakLength = c.breakLength*60
+class playerThread(threading.Thread) :
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.tournamentInProgress = threading.Event()
+        self.jingleQueued = threading.Event()
+        self.terminate = threading.Event()
+        self.fadeIn = threading.Event()
+        self.jingleReady = threading.Event()
+        self.lastJingle = threading.Event()
+        self.segmentDone = threading.Event()
+        self.queue = queue
         self.clemVol = iface.VolumeGet()
-        self.matchStartTime = 0
-        self.matchEndTime = 0
-        self.breakStartTime = 0
-        self.breakEndTime = 0
-        self.turnamentState = None
+        self.jingleEnd = 0
+        self.jingleStart = 0
+        self.queuedJingle = ""
+
         self.jingles={}
         for name in c.jingles:
             jingle = Jingles( c.jingles[name])
@@ -124,18 +131,71 @@ class GameTimer():
             iface.VolumeSet(curVol)
             time.sleep(.05)
 
-    def playJingle(self,j,fadeout=True,fadein=True):
+    def playJingle(self, j, fadeout = True, fadein = True ):
         jingle = self.jingles[j]
+        if fadein:
+            self.fadeIn.set()
         curClemVol = iface.VolumeGet()
         if curClemVol != 0 & fadeout :
-            self.clemVol == curClemVol
-            self.clemChangeVol(self.clemVol,0)
+            self.clemVol = curClemVol
+            self.clemChangeVol(curClemVol, 0 )
         jingle.stop()
         jingle.play()
-        time.sleep( jingle.duration )
-        if fadein :
-            self.clemChangeVol(0,self.clemVol)
-        return 0
+        return jingle
+
+    def run (self):
+        while True :
+            while self.tournamentInProgress.isSet() :
+                if self.jingleQueued.isSet() :
+                    q = self.queue.get()
+                    self.queuedJingle = q[0]
+                    self.jingleEnd = q[1]
+                    self.jingleStart = round (self.jingleEnd - self.jingles[self.queuedJingle].duration,0)
+                    self.jingleReady.set()
+                    self.jingleQueued.clear()
+
+                elif self.jingleStart == round (time.time()) | self.jingleReady.isSet():  
+                    jingle = self.playJingle(self.queuedJingle)
+                    self.jingleEnd = round( time.time() + jingle.duration , 0)
+                    self.jingleReady.clear()
+
+                elif self.jingleEnd == round (time.time()) | self.fadeIn.isSet() :
+                    self.clemChangeVol(0, self.clemVol)
+                    self.fadeIn.clear()
+                    if self.lastJingle.isSet() :
+                        self.segmentDone.set()
+
+
+
+                elif self.terminate.isSet() :
+                    try:
+                        jingle.stop()
+                    except:
+                        pass
+                    return 0
+                time.sleep(1)
+
+def test():
+    tq=Queue()
+    tq.put(['sixtySecond', int(time.time()+10) ])
+    pt=playerThread(tq)
+    pt.start()
+    pt.tournamentInProgress.set()
+    pt.jingleQueued.set()
+    return [pt,tq]
+
+class GameTimer():
+    def __init__(self):
+        self.gameLength = c.gameLength*60
+        self.breakLength = c.breakLength*60
+        self.clemVol = iface.VolumeGet()
+        self.matchStartTime = 0
+        self.matchEndTime = 0
+        self.breakStartTime = 0
+        self.breakEndTime = 0
+        self.playerQueue = Queue()
+        self.ps = playerThread(self.playerQueue)
+        self.ps.start()
 
     def matchStart(self):
         matchStartThread = threading.Timer( 0 , self.playJingle , args = ("matchStart" ) )
@@ -146,9 +206,15 @@ class GameTimer():
         matchEndThread.start()
 
     def breakStart(self):
-        self.breakStartTime = time.time()
-        self.breakEndTime = breakStartTime + self.breakLength
-        breakEndThread = threading.Timer( self.breakLength - self.jingles["breakEnd"].duration - 1 , self.playJingle , args = ( "breakEnd" ) )
+        self.breakStartTime = int(time.time())
+        self.breakEndTime = self.breakStartTime + self.breakLength
+        self.playerQueue.put( ["nMinutesJingle" , self.breakEndTime ] )
+        self.ps.lastJingle.set()
+        self.ps.jingleQueued.set()
+
+    def startTournament(self):
+        self.ps.tournamentInProgress.set()
+        self.breakStart()
 
     def matchTimeStartStr(self):
         return time.strftime("%H:%M:%S" , time.localtime( self.matchStartTime ) )
@@ -170,6 +236,7 @@ class Feeder:
         self.running = False
         self.ui = Ui()
         self.gt = GameTimer()
+        self.segment = ""
         self.count = 0
         self.key = "i"
     
@@ -177,8 +244,13 @@ class Feeder:
         self.running = True
         self.feed()
 
+    def startTournament(self):
+        self.segment = "break"
+        self.gt.startTournament ()
+
     def stop (self):
         self.running = False
+        self.gt.ps.terminate.set()
         self.ui.quitUi()
 
     def feed(self):
@@ -190,8 +262,9 @@ class Feeder:
                         "M" : og,
                         "P" : iface.Play ,
                         "q" : self.stop ,
-                        "s" : self.gt.matchStart ,
-                        "S" : iface.Stop 
+                        "s" : self.gt.breakStart ,
+                        "S" : iface.Stop ,
+                        "t" : self.startTournament
 
                         }
 #                try:
@@ -215,7 +288,7 @@ class Feeder:
 
             self.ui.win1.addstr(2,1,"Count is: " + str(self.count) )
             self.ui.win1.addstr(3,1,"Last input: " + self.key)
-            self.ui.win1.addstr(4,1,"Turnament State: " + str( self.gt.turnamentState ) )
+            self.ui.win1.addstr(4,1,"Turnament State: " + str( self.gt.ps.jingleStart ) )
             self.ui.win1.addstr(5,1,"Threads:" + str(threading.enumerate() ) )
 
 
@@ -229,6 +302,19 @@ class Feeder:
 
             self.ui.refresh()
             self.count += 1
+
+            if self.gt.ps.segmentDone.isSet() :
+                self.gt.ps.segmentDone.clear()
+                if self.segment == "break" :
+                    self.segment = "match"
+                    self.gt.matchStart()
+
+                elif self.segment == "match":
+                    self.segment = "break"
+                    self.gt.breakStart()
+
+
+
             time.sleep(0.1)
 
 
