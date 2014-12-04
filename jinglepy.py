@@ -76,6 +76,13 @@ class Ui:
         self.win2.refresh()
         self.win3.refresh()
 
+    def swpan(self , fromPanel , toPanel) :
+
+        fromPanel.bottom()
+        fromPanel.hide()
+        toPanel.top()
+        toPanel.show()
+
     def switch_pan(self):
 
         def switch(fromPanel, toPanel):
@@ -114,6 +121,7 @@ class playerThread(threading.Thread) :
         self.clemVol = iface.VolumeGet()
         self.jingleEnd = 0
         self.jingleStart = 0
+        self.jingleQueue = {}
         self.queuedJingle = ""
 
         self.jingles={}
@@ -148,45 +156,46 @@ class playerThread(threading.Thread) :
             while self.tournamentInProgress.isSet() :
                 if self.jingleQueued.isSet() :
                     q = self.queue.get()
-                    self.queuedJingle = q[0]
-                    self.jingleEnd = q[1]
-                    self.jingleStart = round (self.jingleEnd - self.jingles[self.queuedJingle].duration,0)
-                    self.jingleReady.set()
+                    qJingle = q[0]
+                    if q[2] :
+                        jingleEnd = q[1]
+                        jingleStart = round (jingleEnd - self.jingles[qJingle].duration,0 - 1 )
+                    else :
+                        jingleStart = q[1]
+                    lastJingle = q[3]
+                    self.jingleQueue[jingleStart]=[qJingle,lastJingle]
                     self.jingleQueued.clear()
 
-                elif self.jingleStart == round (time.time()) | self.jingleReady.isSet():  
-                    jingle = self.playJingle(self.queuedJingle)
-                    self.jingleEnd = round( time.time() + jingle.duration , 0)
-                    self.jingleReady.clear()
+                for t in self.jingleQueue.keys() :
+                    if t == round( time.time()) :
+                        j = self.jingleQueue.pop(t)
+                        jingle = self.playJingle( j[0] )
+                        if j[1] :
+                            self.lastJingle.set()
+                        self.jingleEnd = round( time.time() + jingle.duration , 0)
+                        break
 
-                elif self.jingleEnd == round (time.time()) | self.fadeIn.isSet() :
+                if self.jingleEnd == round (time.time()) : #| self.fadeIn.isSet() :
                     self.clemChangeVol(0, self.clemVol)
                     self.fadeIn.clear()
                     if self.lastJingle.isSet() :
                         self.segmentDone.set()
+                        self.lastJingle.clear()
 
-
-
-                elif self.terminate.isSet() :
+                if self.terminate.isSet() :
                     try:
                         jingle.stop()
                     except:
                         pass
                     return 0
-                time.sleep(1)
+                time.sleep(0.1)
 
-def test():
-    tq=Queue()
-    tq.put(['sixtySecond', int(time.time()+10) ])
-    pt=playerThread(tq)
-    pt.start()
-    pt.tournamentInProgress.set()
-    pt.jingleQueued.set()
-    return [pt,tq]
+
+
 
 class GameTimer():
     def __init__(self):
-        self.gameLength = c.gameLength*60
+        self.matchLength = c.gameLength*60
         self.breakLength = c.breakLength*60
         self.clemVol = iface.VolumeGet()
         self.matchStartTime = 0
@@ -196,20 +205,28 @@ class GameTimer():
         self.playerQueue = Queue()
         self.ps = playerThread(self.playerQueue)
         self.ps.start()
+        self.tournamentState = "Not started"
 
     def matchStart(self):
-        matchStartThread = threading.Timer( 0 , self.playJingle , args = ("matchStart" ) )
-        matchStartThread.start()
-        self.matchStartTime = time.time()
-        self.matchEndTime = self.matchStartTime + self.gameLength
-        matchEndThread = threading.Timer( self.gameLength - self.jingles["matchStart"].duration - 1 , self.playJingle , args = ("matchStart") )
-        matchEndThread.start()
+        self.tournamentState = "Match"
+        self.matchStartTime = int(time.time()) + 1
+        self.matchEndTime = self.matchStartTime + self.matchLength
+#       queue format  [  jingle , time , True if time = time when jingle should end , True if segment ends after jingle ]      
+        self.playerQueue.put( ["matchStart", self.matchStartTime , False , False ] )
+        self.ps.jingleQueued.set()
+        
+        #wait until queue is read
+        while self.ps.jingleQueued.isSet() :
+            time.sleep(0.1)
+        #put match outro intro queue
+        self.playerQueue.put( ["sixtySecond" , self.matchEndTime , True , True ] )
+        self.ps.jingleQueued.set()
 
     def breakStart(self):
+        self.tournamentState = "Break"
         self.breakStartTime = int(time.time())
         self.breakEndTime = self.breakStartTime + self.breakLength
-        self.playerQueue.put( ["nMinutesJingle" , self.breakEndTime ] )
-        self.ps.lastJingle.set()
+        self.playerQueue.put( ["nMinutesJingle" , self.breakEndTime , True , True ] )
         self.ps.jingleQueued.set()
 
     def startTournament(self):
@@ -246,6 +263,7 @@ class Feeder:
 
     def startTournament(self):
         self.segment = "break"
+        self.ui.swpan(self.ui.pan3, self.ui.pan2)
         self.gt.startTournament ()
 
     def stop (self):
@@ -272,7 +290,7 @@ class Feeder:
 #                except:
 #                    self.ui.win1.addstr(10,1,"Command is unknown or failed." +str( sys.exc_info()[0]) )
 
-            if self.count%1000 == 0:
+            if self.count%100 == 0:
                 self.ui.win1.clear()
                 self.ui.win2.clear()
                 self.ui.win3.clear()
@@ -287,9 +305,10 @@ class Feeder:
 
 
             self.ui.win1.addstr(2,1,"Count is: " + str(self.count) )
+            self.ui.win1.addstr(2,20, "time: "  + str (int(time.time())))
             self.ui.win1.addstr(3,1,"Last input: " + self.key)
-            self.ui.win1.addstr(4,1,"Turnament State: " + str( self.gt.ps.jingleStart ) )
-            self.ui.win1.addstr(5,1,"Threads:" + str(threading.enumerate() ) )
+            self.ui.win1.addstr(4,1,"Tournament State: " + self.gt.tournamentState )
+            self.ui.win1.addstr(5,1,"Queued jingles" + str( self.gt.ps.jingleQueue ) )
 
 
             self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.TimeStr( self.gt.matchStartTime ) )
@@ -302,15 +321,18 @@ class Feeder:
 
             self.ui.refresh()
             self.count += 1
+            
 
             if self.gt.ps.segmentDone.isSet() :
                 self.gt.ps.segmentDone.clear()
                 if self.segment == "break" :
+                    self.ui.swpan(self.ui.pan2, self.ui.pan3)
                     self.segment = "match"
                     self.gt.matchStart()
 
                 elif self.segment == "match":
                     self.segment = "break"
+                    self.ui.swpan(self.ui.pan3, self.ui.pan2)
                     self.gt.breakStart()
 
 
