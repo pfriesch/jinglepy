@@ -258,7 +258,12 @@ class Feeder:
         self.segment = ""
         self.count = 0
         self.key = "i"
-    
+        self.tournamentStartTime = int( time.mktime(time.strptime( c.tournamentStartTime , "%d.%m.%y %H:%M:%S" )) - c.breakLength)
+        def getTournamentStartTime():
+            today = time.strftime
+
+
+
     def run(self):
         self.running = True
         self.feed()
@@ -285,12 +290,11 @@ class Feeder:
                         "s" : self.gt.breakStart ,
                         "S" : iface.Stop ,
                         "t" : self.startTournament
-
                         }
-#                try:
-                options[self.key]()
-#                except:
-#                    self.ui.win1.addstr(10,1,"Command is unknown or failed." +str( sys.exc_info()[0]) )
+                try:
+                    options[self.key]()
+                except:
+                    self.ui.win1.addstr(10,1,"Command is unknown or failed." +str( sys.exc_info()[0]) )
 
             if self.count%100 == 0:
                 self.ui.win1.clear()
@@ -308,9 +312,10 @@ class Feeder:
 
             self.ui.win1.addstr(2,1,"Count is: " + str(self.count) )
             self.ui.win1.addstr(2,20, "time: "  + str (int(time.time())))
-            self.ui.win1.addstr(3,1,"Last input: " + self.key)
-            self.ui.win1.addstr(4,1,"Tournament State: " + self.gt.tournamentState )
-            self.ui.win1.addstr(5,1,"Queued jingles" + str( self.gt.ps.jingleQueue ) )
+            self.ui.win1.addstr(3,1, "tournament starts @:     "  + str (self.tournamentStartTime))
+            self.ui.win1.addstr(4,1,"Last input: " + self.key)
+            self.ui.win1.addstr(5,1,"Tournament State: " + self.gt.tournamentState )
+            self.ui.win1.addstr(6,1,"Queued jingles" + str( self.gt.ps.jingleQueue ) )
 
 
             self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.TimeStr( self.gt.matchStartTime ) )
