@@ -188,7 +188,7 @@ class playerThread(threading.Thread) :
                     except:
                         pass
                     return 0
-                time.sleep(0.1)
+            time.sleep(0.1)
 
 
 
