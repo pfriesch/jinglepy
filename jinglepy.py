@@ -226,7 +226,7 @@ class GameTimer():
         self.tournamentState = "Break"
         self.breakStartTime = int(time.time())
         self.breakEndTime = self.breakStartTime + self.breakLength
-        self.playerQueue.put( ["nMinutesJingle" , self.breakEndTime , True , True ] )
+        self.playerQueue.put( ["breakEnd" , self.breakEndTime , True , True ] )
         self.ps.jingleQueued.set()
 
     def startTournament(self):
