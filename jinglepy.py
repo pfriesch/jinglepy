@@ -159,7 +159,7 @@ class playerThread(threading.Thread) :
                     qJingle = q[0]
                     if q[2] :
                         jingleEnd = q[1]
-                        jingleStart = round (jingleEnd - self.jingles[qJingle].duration,0 - 1 )
+                        jingleStart = round (jingleEnd - self.jingles[qJingle].duration - 1 ,0 )
                     else :
                         jingleStart = q[1]
                     lastJingle = q[3]
