@@ -188,9 +188,8 @@ class playerThread(threading.Thread) :
                     except:
                         pass
                     return 0
+                time.sleep(0.1)
             time.sleep(0.1)
-
-
 
 
 class GameTimer():
@@ -231,10 +230,6 @@ class GameTimer():
         self.playerQueue.put( ["breakEnd" , self.breakEndTime , True , True ] )
         self.ps.jingleQueued.set()
 
-    def startTournament(self):
-        self.ps.tournamentInProgress.set()
-        self.breakStart()
-
     def matchTimeStartStr(self):
         return time.strftime("%H:%M:%S" , time.localtime( self.matchStartTime ) )
 
@@ -258,11 +253,7 @@ class Feeder:
         self.segment = ""
         self.count = 0
         self.key = "i"
-        self.tournamentStartTime = int( time.mktime(time.strptime( c.tournamentStartTime , "%d.%m.%y %H:%M:%S" )) - c.breakLength)
-        def getTournamentStartTime():
-            today = time.strftime
-
-
+        self.tournamentStartTime = int( time.mktime( time.strptime( c.tournamentStartTime , "%d.%m.%y %H:%M:%S" ) ) )
 
     def run(self):
         self.running = True
@@ -271,7 +262,8 @@ class Feeder:
     def startTournament(self):
         self.segment = "break"
         self.ui.swpan(self.ui.pan3, self.ui.pan2)
-        self.gt.startTournament ()
+        self.gt.ps.tournamentInProgress.set()
+        self.gt.breakStart()
 
     def stop (self):
         self.running = False
@@ -309,7 +301,6 @@ class Feeder:
                 self.ui.win2.addstr(1,1,"Match:")
                 self.ui.win3.addstr(1,1,"Break:")
 
-
             self.ui.win1.addstr(2,1,"Count is: " + str(self.count) )
             self.ui.win1.addstr(2,20, "time: "  + str (int(time.time())))
             self.ui.win1.addstr(3,1, "tournament starts @:     "  + str (self.tournamentStartTime))
@@ -328,13 +319,12 @@ class Feeder:
 
             self.ui.refresh()
             self.count += 1
-            
 
             if self.gt.ps.segmentDone.isSet() :
                 self.gt.ps.segmentDone.clear()
                 if self.segment == "break" :
-                    self.ui.swpan(self.ui.pan2, self.ui.pan3)
                     self.segment = "match"
+                    self.ui.swpan(self.ui.pan2, self.ui.pan3)
                     self.gt.matchStart()
 
                 elif self.segment == "match":
@@ -342,7 +332,10 @@ class Feeder:
                     self.ui.swpan(self.ui.pan3, self.ui.pan2)
                     self.gt.breakStart()
 
-
+            #check if it is time to start the tournament
+            if self.gt.tournamentState == "Not started" :
+                if self.tournamentStartTime - self.gt.breakLength == int(time.time()) :
+                    self.startTournament()
 
             time.sleep(0.1)
 
