@@ -197,6 +197,7 @@ class GameTimer():
     def __init__(self):
         self.matchLength = c.gameLength*60
         self.breakLength = c.breakLength*60
+        self.nMinutes = c.nLastMinutes*60
         self.clemVol = iface.VolumeGet()
         self.matchStartTime = 0
         self.matchEndTime = 0
@@ -211,8 +212,9 @@ class GameTimer():
         self.tournamentState = "Match"
         self.matchStartTime = int(time.time()) + 1
         self.matchEndTime = self.matchStartTime + self.matchLength
+        self.nMinutesTime = self.matchEndTime - self.nMinutes
 #       queue format  [  jingle , time , True if time = time when jingle should end , True if segment ends after jingle ]      
-        self.playerQueue.put( ["matchStart", self.matchStartTime , False , False ] )
+        self.playerQueue.put( ["nMinutes", self.nMinutesTime , False , False ] )
         self.ps.jingleQueued.set()
         
         #wait until queue is read
