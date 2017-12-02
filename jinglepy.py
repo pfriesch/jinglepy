@@ -301,12 +301,12 @@ class Feeder:
                 self.ui.win2.addstr(1,1,"Match:")
                 self.ui.win3.addstr(1,1,"Break:")
 
-                self.ui.win1.addstr(9,1, "Keycommands:")
-                self.ui.win1.addstr(10,2, "[S]top music playback")
-                self.ui.win1.addstr(11,2,"Start music [P]layback")
-                self.ui.win1.addstr(12,2,"Tog[l]le interface")
-                self.ui.win1.addstr(13,2,"S[t]art tournament")
-                self.ui.win1.addstr(14,2,"[q]uit jinglepy")
+                self.ui.win1.addstr(13,1, "Keycommands:")
+                self.ui.win1.addstr(14,2, "[S]top music playback")
+                self.ui.win1.addstr(15,2,"Start music [P]layback")
+                self.ui.win1.addstr(16,2,"Tog[l]le interface")
+                self.ui.win1.addstr(17,2,"S[t]art tournament")
+                self.ui.win1.addstr(18,2,"[q]uit jinglepy")
 
 
             self.ui.win1.addstr(2,1,"Alive: " + str(self.wheel[self.count%4]) )
@@ -314,7 +314,14 @@ class Feeder:
             self.ui.win1.addstr(3,1, "tournament starts @:     "  + str (formated_time(self.tournamentStartTime)))
             self.ui.win1.addstr(4,1,"Last input: " + self.key)
             self.ui.win1.addstr(5,1,"Tournament State: " + self.gt.tournamentState )
-            self.ui.win1.addstr(6,1,"Queued jingles: " + str( self.gt.ps.jingleQueue ) )
+            self.ui.win1.addstr(6,1,"Queued jingles: " )
+            
+            queueline= 6
+            nextfreeline=1
+            for k in self.gt.ps.jingleQueue :
+                line = queueline + nextfreeline
+                self.ui.win1.addstr( line , 2 , formated_time(k) + " " + str(self.gt.ps.jingleQueue[k][0]) )
+                nextfreeline += 1
 
 
             self.ui.win2.addstr(2,1,"Match started  @ " + self.gt.TimeStr( self.gt.matchStartTime ) )
