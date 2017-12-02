@@ -230,13 +230,13 @@ class GameTimer():
         self.ps.jingleQueued.set()
 
     def matchTimeStartStr(self):
-        return time.strftime("%H:%M:%S" , time.localtime( self.matchStartTime ) )
+        return formated_time ( self.matchStartTime )
 
     def matchTimeEndStr(self):
-        return time.strftime("%H:%M:%S" , time.localtime( self.matchEndTime ) )
+        return formated_time( self.matchEndTime )
 
     def TimeStr(self, t):
-        return time.strftime("%H:%M:%S" , time.localtime( t ) )
+        return formated_time( t )
 
     def TimeRemaining(self, t):
         secs = abs( int( t - time.time() ) )
@@ -310,8 +310,8 @@ class Feeder:
 
 
             self.ui.win1.addstr(2,1,"Alive: " + str(self.wheel[self.count%4]) )
-            self.ui.win1.addstr(2,20, "time: "  + str (int(time.time())))
-            self.ui.win1.addstr(3,1, "tournament starts @:     "  + str (self.tournamentStartTime))
+            self.ui.win1.addstr(2,20, "time: "  + str (formated_time(time.time())))
+            self.ui.win1.addstr(3,1, "tournament starts @:     "  + str (formated_time(self.tournamentStartTime)))
             self.ui.win1.addstr(4,1,"Last input: " + self.key)
             self.ui.win1.addstr(5,1,"Tournament State: " + self.gt.tournamentState )
             self.ui.win1.addstr(6,1,"Queued jingles: " + str( self.gt.ps.jingleQueue ) )
@@ -346,6 +346,10 @@ class Feeder:
                     self.startTournament()
 
             time.sleep(0.1)
+
+def formated_time (t):
+        return time.strftime("%H:%M:%S" , time.localtime(t) )
+
 
 
 if __name__ == "__main__":
