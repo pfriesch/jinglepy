@@ -7,11 +7,9 @@ import config
 import sys
 import select
 import objgraph
+import vlc
 from queue import Queue
 
-from gi.repository import Gst
-
-Gst.init(sys.argv)
 
 c = config
 
@@ -35,21 +33,20 @@ iface = dbus.Interface(player,dbus_interface='org.freedesktop.MediaPlayer')
 
 class Jingles():
     def __init__(self,audiofile):
-        self.player = Gst.ElementFactory.make("playbin","player")
-        self.player.set_property("uri",audiofile)
-        self.player.set_state(Gst.State.PLAYING)
+        self.player = vlc.MediaPlayer(audiofile)
+        self.player.play()
         time.sleep(0.1)
-        self.duration=round (self.player.query_duration(Gst.Format.TIME)[1] / Gst.SECOND , 1)
-        self.player.set_state(Gst.State.NULL)
+        self.duration= round(self.player.get_length() / 1000 , 1)
+        self.player.stop()
     
     def play(self):
-        self.player.set_state(Gst.State.PLAYING)
+        self.player.play()
 
     def pause(self):
-        self.player.set_state(Gst.State.PAUSE)
+        self.player.pause()
 
     def stop(self):
-        self.player.set_state(Gst.State.NULL)
+        self.player.stop()
 
 
 class Ui:
