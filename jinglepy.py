@@ -47,7 +47,9 @@ class Jingles():
 
     def stop(self):
         self.player.stop()
-
+    
+    def get_duration(self):
+        return self.duration
 
 class Ui:
     def __init__(self):
@@ -156,7 +158,7 @@ class playerThread(threading.Thread) :
                     qJingle = q[0]
                     if q[2] :
                         jingleEnd = q[1]
-                        jingleStart = round (jingleEnd - self.jingles[qJingle].duration - 1 ,0 )
+                        jingleStart = round (jingleEnd - self.jingles[qJingle].get_duration() - 1 ,0 )
                     else :
                         jingleStart = q[1]
                     lastJingle = q[3]
@@ -169,7 +171,7 @@ class playerThread(threading.Thread) :
                         jingle = self.playJingle( j[0] )
                         if j[1] :
                             self.lastJingle.set()
-                        self.jingleEnd = round( time.time() + jingle.duration , 0)
+                        self.jingleEnd = round( time.time() + jingle.get_duration() , 0)
                         break
 
                 if self.jingleEnd == round (time.time()) : #| self.fadeIn.isSet() :
