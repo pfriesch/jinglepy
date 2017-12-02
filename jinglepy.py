@@ -253,7 +253,7 @@ class Feeder:
         self.count = 0
         self.key = "i"
         self.tournamentStartTime = int( time.mktime( time.strptime( c.tournamentStartTime , "%d.%m.%y %H:%M:%S" ) ) )
-        self.wheel = ["|",'\\',"-","/"]
+        self.wheel = ["|",'/',"-","\\"]
 
     def run(self):
         self.running = True
