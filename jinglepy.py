@@ -28,7 +28,7 @@ try:
 except:
     #launch clementine if needed
     clem = subprocess.Popen('clementine' , stdout=subprocess.PIPE , stderr=subprocess.PIPE)
-    time.sleep(2)
+    time.sleep(5)
     player = session_bus.get_object('org.mpris.clementine' , '/Player')
 
 iface = dbus.Interface(player,dbus_interface='org.freedesktop.MediaPlayer')
