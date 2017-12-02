@@ -7,13 +7,9 @@ import config
 import sys
 import select
 import objgraph
+import vlc
 from queue import Queue
 
-import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst
-
-Gst.init(sys.argv)
 
 c = config
 
@@ -30,29 +26,30 @@ try:
 except:
     #launch clementine if needed
     clem = subprocess.Popen('clementine' , stdout=subprocess.PIPE , stderr=subprocess.PIPE)
-    time.sleep(2)
+    time.sleep(5)
     player = session_bus.get_object('org.mpris.clementine' , '/Player')
 
 iface = dbus.Interface(player,dbus_interface='org.freedesktop.MediaPlayer')
 
 class Jingles():
     def __init__(self,audiofile):
-        self.player = Gst.ElementFactory.make("playbin","player")
-        self.player.set_property("uri",audiofile)
-        self.player.set_state(Gst.State.PLAYING)
+        self.player = vlc.MediaPlayer(audiofile)
+        self.player.play()
         time.sleep(0.1)
-        self.duration=round (self.player.query_duration(Gst.Format.TIME)[1] / Gst.SECOND , 1)
-        self.player.set_state(Gst.State.NULL)
+        self.duration= round(self.player.get_length() / 1000 , 1)
+        self.player.stop()
     
     def play(self):
-        self.player.set_state(Gst.State.PLAYING)
+        self.player.play()
 
     def pause(self):
-        self.player.set_state(Gst.State.PAUSE)
+        self.player.pause()
 
     def stop(self):
-        self.player.set_state(Gst.State.NULL)
-
+        self.player.stop()
+    
+    def get_duration(self):
+        return self.duration
 
 class Ui:
     def __init__(self):
@@ -161,7 +158,7 @@ class playerThread(threading.Thread) :
                     qJingle = q[0]
                     if q[2] :
                         jingleEnd = q[1]
-                        jingleStart = round (jingleEnd - self.jingles[qJingle].duration - 1 ,0 )
+                        jingleStart = round (jingleEnd - self.jingles[qJingle].get_duration() - 1 ,0 )
                     else :
                         jingleStart = q[1]
                     lastJingle = q[3]
@@ -174,7 +171,7 @@ class playerThread(threading.Thread) :
                         jingle = self.playJingle( j[0] )
                         if j[1] :
                             self.lastJingle.set()
-                        self.jingleEnd = round( time.time() + jingle.duration , 0)
+                        self.jingleEnd = round( time.time() + jingle.get_duration() , 0)
                         break
 
                 if self.jingleEnd == round (time.time()) : #| self.fadeIn.isSet() :
