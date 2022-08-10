@@ -1,4 +1,8 @@
 # Times in minutes
+from typing import List
+
+from src.helper import ScheduleEntry, TournamentState
+
 gameLength = 300
 nLastMinutes = 30
 breakLength = 5
@@ -19,3 +23,18 @@ jingles = {
     "gamesStarting": "ressources/220809_TournaMINT_Jingles_Games are starting.wav",
     "halfTime": "ressources/220809_TournaMINT_Jingles_Half time.wav"
 }
+
+# time format "dd.mm.yy hh:mm:ss"
+schedule: List[ScheduleEntry] = [
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.NotStarted),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Break),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Match),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Break),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Match),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Break),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Match),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Break),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Match),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Break),
+    ScheduleEntry("10.08.22 00:50:00", TournamentState.Match)
+]

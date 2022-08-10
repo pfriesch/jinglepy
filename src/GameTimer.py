@@ -4,14 +4,10 @@ from queue import Queue
 import config
 from .PlayerThread import PlayerThread, QueuedJingle
 from .helper import formated_time
-from .NativeVoolumeControls import NativeVolumeControls
+from .helper import volume_control
 from enum import Enum
 
 
-class TournamentState(Enum):
-    NotStarted = "NotStarted"
-    Match = "Match"
-    Break = "Break"
 
 
 class GameTimer:
@@ -19,7 +15,7 @@ class GameTimer:
         self.matchLength = config.gameLength  # * 60
         self.breakLength = config.breakLength  # * 60
         self.nMinutes = config.nLastMinutes  # * 60
-        self.clemVol = NativeVolumeControls.volume_get()
+        self.clemVol = volume_control.volume_get()
         self.matchStartTime = 0
         self.matchEndTime = 0
         self.breakStartTime = 0

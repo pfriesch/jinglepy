@@ -4,7 +4,7 @@ import sys
 import select
 
 from .GameTimer import GameTimer, TournamentState
-from .NativeVoolumeControls import NativeVolumeControls
+from .NativeVolumeControls import NativeVolumeControls
 from .Ui import Ui
 from .helper import formated_time
 from enum import Enum
@@ -115,7 +115,7 @@ class Feeder:
 
             # check if it is time to start the tournament
             if self.gt.tournamentState == TournamentState.NotStarted:
-                if self.tournamentStartTime - self.gt.breakLength == int(time.time()):
+                if self. tournamentStartTime - self.gt.breakLength == int(time.time()):
                     self.start_tournament()
 
             time.sleep(0.1)

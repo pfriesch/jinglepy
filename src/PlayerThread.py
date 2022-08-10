@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from queue import Queue
 
 from .Jingles import Jingles
+from .helper import volume_control
 import config
-from .NativeVoolumeControls import NativeVolumeControls
 
 
 @dataclass
@@ -27,7 +27,7 @@ class PlayerThread(threading.Thread):
         self.lastJingle = threading.Event()
         self.segmentDone = threading.Event()
         self.queue: Queue[QueuedJingle] = queue
-        self.clemVol = NativeVolumeControls.volume_get()
+        self.clemVol = volume_control.volume_get()
         self.jingleEnd = 0
         self.jingleStart = 0
         self.jingleQueue = {}
@@ -46,14 +46,14 @@ class PlayerThread(threading.Thread):
         cur_vol = start_vol
         for i in range(steps):
             cur_vol = cur_vol - step
-            NativeVolumeControls.volume_set(cur_vol)
+            volume_control.volume_set(cur_vol)
             time.sleep(.05)
 
     def play_jingle(self, j, fadeout=True, fadein=True):
         jingle = self.jingles[j]
         if fadein:
             self.fadeIn.set()
-        cur_clem_vol = NativeVolumeControls.volume_get()
+        cur_clem_vol = volume_control.volume_get()
         if cur_clem_vol != 0 & fadeout:
             self.clemVol = cur_clem_vol
             PlayerThread.clem_change_vol(cur_clem_vol, 0)
