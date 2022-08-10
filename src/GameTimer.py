@@ -2,7 +2,7 @@ import time
 import datetime
 from queue import Queue
 import config
-from .PlayerThread import PlayerThread
+from .PlayerThread import PlayerThread, QueuedJingle
 from .helper import formated_time
 from .NativeVoolumeControls import NativeVolumeControls
 from enum import Enum
@@ -24,7 +24,7 @@ class GameTimer:
         self.matchEndTime = 0
         self.breakStartTime = 0
         self.breakEndTime = 0
-        self.playerQueue = Queue()
+        self.playerQueue: Queue[QueuedJingle] = Queue()
         self.ps = PlayerThread(self.playerQueue)
         self.ps.start()
         self.tournamentState = TournamentState.NotStarted
@@ -34,22 +34,51 @@ class GameTimer:
         self.matchStartTime = int(time.time()) + 1
         self.matchEndTime = self.matchStartTime + self.matchLength
         self.nMinutesTime = self.matchEndTime - self.nMinutes
-        #       queue format  [  jingle , time , True if time = time when jingle should end , True if segment ends after jingle ]
-        self.playerQueue.put(["gamesStarting", self.nMinutesTime, False, False])
+        self.playerQueue.put(QueuedJingle("gamesStarting",
+                                          jingle_time=self.nMinutesTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
         self.ps.jingleQueued.set()
 
         # wait until queue is read
         while self.ps.jingleQueued.isSet():
             time.sleep(0.1)
         # put match outro intro queue
-        self.playerQueue.put(["1minLeft", self.matchEndTime, True, True])
+        self.playerQueue.put(QueuedJingle("halfTime",
+                                          jingle_time=self.matchEndTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
+        self.playerQueue.put(QueuedJingle("5minLeft",
+                                          jingle_time=self.matchEndTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
+        self.playerQueue.put(QueuedJingle("1minLeft",
+                                          jingle_time=self.matchEndTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
+        self.playerQueue.put(QueuedJingle("gameOver",
+                                          jingle_time=self.matchEndTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
         self.ps.jingleQueued.set()
 
     def break_start(self):
         self.tournamentState = TournamentState.Break
         self.breakStartTime = int(time.time())
         self.breakEndTime = self.breakStartTime + self.breakLength
-        self.playerQueue.put(["halfTime", self.breakEndTime, True, True])
+        self.breakEndTime = self.breakStartTime + self.breakLength
+        self.playerQueue.put(QueuedJingle("5minToGame",
+                                          jingle_time=self.breakEndTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
+        self.playerQueue.put(QueuedJingle("1minLeft",
+                                          jingle_time=self.breakEndTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
+        self.playerQueue.put(QueuedJingle("gamesStarting",
+                                          jingle_time=self.breakEndTime,
+                                          should_end_at_time=False,
+                                          last_jingle=False))
         self.ps.jingleQueued.set()
 
     def match_time_start_str(self):
