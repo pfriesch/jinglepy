@@ -1,19 +1,19 @@
 import threading
-import time
 from dataclasses import dataclass
+from datetime import datetime
 from queue import Queue
 
 from .Jingles import Jingles
-from .helper import volume_control
+from .helper import volume_control, thread_sleep
 import config
 
 
 @dataclass
 class QueuedJingle:
     jingle_id: str
-    jingle_time: int
+    jingle_time: datetime
     should_end_at_time: bool
-    last_jingle: bool
+    is_last_jingle: bool
 
 
 class PlayerThread(threading.Thread):
@@ -28,8 +28,8 @@ class PlayerThread(threading.Thread):
         self.segmentDone = threading.Event()
         self.queue: Queue[QueuedJingle] = queue
         self.clemVol = volume_control.volume_get()
-        self.jingleEnd = 0
-        self.jingleStart = 0
+        self.jingleEnd: datetime = datetime.fromtimestamp(0)
+        self.jingleStart: datetime = datetime.fromtimestamp(0)
         self.jingleQueue = {}
         self.queuedJingle = ""
 
@@ -47,7 +47,7 @@ class PlayerThread(threading.Thread):
         for i in range(steps):
             cur_vol = cur_vol - step
             volume_control.volume_set(cur_vol)
-            time.sleep(.05)
+            thread_sleep(.05)
 
     def play_jingle(self, j, fadeout=True, fadein=True):
         jingle = self.jingles[j]
@@ -62,34 +62,31 @@ class PlayerThread(threading.Thread):
         return jingle
 
     def run(self):
-        jingle = self.play_jingle("gamesStarting")
-
-        time.sleep(5000)
-
         while True:
             while self.tournamentInProgress.isSet():
                 if self.jingleQueued.isSet():
-                    nextJingle = self.queue.get()
-                    jingle_id = nextJingle.jingle_id
-                    if nextJingle.should_end_at_time:
-                        jingle_end = nextJingle.jingle_time
-                        jingle_start = round(jingle_end - self.jingles[jingle_id].get_duration() - 1, 0)
+                    next_jingle = self.queue.get()
+                    jingle_id = next_jingle.jingle_id
+                    if next_jingle.should_end_at_time:
+                        jingle_end = next_jingle.jingle_time
+                        jingle_start = jingle_end - self.jingles[jingle_id].get_duration()
                     else:
-                        jingle_start = nextJingle.jingle_time
-                    last_jingle = nextJingle.last_jingle
-                    self.jingleQueue[jingle_start] = [jingle_id, last_jingle]
+                        jingle_start = next_jingle.jingle_time
+                    is_last_jingle = next_jingle.is_last_jingle
+                    self.jingleQueue[jingle_start] = [jingle_id, is_last_jingle]
                     self.jingleQueued.clear()
 
-                for t in self.jingleQueue.keys():
-                    if t <= round(time.time()):
-                        j = self.jingleQueue.pop(t)
+                for jingle_time in self.jingleQueue.keys():
+                    if jingle_time >= datetime.now():
+                        j = self.jingleQueue.pop(jingle_time)
                         jingle = self.play_jingle(j[0])
+                        print("playing jingle")
                         if j[1]:
                             self.lastJingle.set()
-                        self.jingleEnd = round(time.time() + jingle.get_duration(), 0)
+                        self.jingleEnd = datetime.now() + jingle.get_duration()
                         break
 
-                if self.jingleEnd <= round(time.time()):  # | self.fadeIn.isSet() :
+                if self.jingleEnd >= datetime.now():  # | self.fadeIn.isSet() :
                     self.clem_change_vol(0, self.clemVol)
                     self.fadeIn.clear()
                     if self.lastJingle.isSet():
@@ -102,5 +99,5 @@ class PlayerThread(threading.Thread):
                     except:
                         pass
                     return 0
-                time.sleep(0.1)
-            time.sleep(0.1)
+                thread_sleep(0.1)
+            thread_sleep(0.1)
