@@ -1,20 +1,20 @@
 # Times in minutes
-from datetime import timedelta
-from typing import List
+from datetime import timedelta, datetime
 
-from src.helper import ScheduleEntry, TournamentState
-from scheudle_test import schedule_test
-
-gameLength = timedelta(minutes=2)
+gameLength = timedelta(minutes=3)
 halfTime = timedelta(seconds=30)
 oneMinLeft = timedelta(seconds=30)
 oneMinToGame = timedelta(seconds=30)
 fiveMinLeft = timedelta(seconds=60)
 fiveMinToGame = timedelta(seconds=60)
-breakLength = timedelta(seconds=60)
+breakLength = timedelta(minutes=2)
 
 # Time of day the first match starts. String has to be of the format "dd.mm.yy HH:MM:SS"
-tournamentStartTime = "11.08.22 02:30:00"  # Starttime as "dd.mm.yy hh:mm:ss"
+# tournament_start_time = datetime(year=2022, month=8, day=11, hour=21, minute=23, second=00)
+tournament_start_time = datetime.now() - timedelta(seconds=1000)
+# tournament_start_time = datetime(year=tournament_start_time.year, month=tournament_start_time.month, day=tournament_start_time.day, hour=tournament_start_time.hour, minute=15 * round((float(tournament_start_time.minute) + float(tournament_start_time.second) / 60) / 15) % 60)
+
+slots_count = 9
 # gameLength = 23  # times in minutes
 # nLastMinutes = 5  # times in minutes
 # breakLength = 2  # times in minutes
@@ -30,4 +30,15 @@ jingles = {
     "halfTime": "ressources/220809_TournaMINT_Jingles_Half time.wav"
 }
 
-# schedule = schedule_test
+# dateformat = "%H:%M"
+dateformat = "%H:%M:%S"
+
+tournament_start_time = datetime(year=tournament_start_time.year, month=tournament_start_time.month, day=tournament_start_time.day, hour=0, minute=0)
+
+gameLength = timedelta(minutes=45)
+halfTime = timedelta(minutes=22)
+oneMinLeft = timedelta(minutes=1)
+oneMinToGame = timedelta(minutes=1)
+fiveMinLeft = timedelta(minutes=5)
+fiveMinToGame = timedelta(minutes=5)
+breakLength = timedelta(minutes=15)
