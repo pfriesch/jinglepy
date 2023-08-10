@@ -24,8 +24,7 @@ class PrintLogger(RichLog):
 
 
 class Ui(App):
-    BINDINGS = [("q", "quit", "Quit"),
-                ("t", "test", "Test")]
+    BINDINGS = [("q", "quit", "Quit")]
     CSS_PATH = "jinglepy.css"
 
     def compose(self) -> ComposeResult:
@@ -34,10 +33,6 @@ class Ui(App):
         yield JingleQueue()
         yield Schedule()
         yield Footer()
-
-    def test(self):
-        print("Test")
-        pass
 
     def on_mount(self) -> None:
         # self.query_one(RichLog).write("RichLog")

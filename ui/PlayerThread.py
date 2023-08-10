@@ -26,7 +26,6 @@ class PlayerThread(threading.Thread):
             cur_vol = cur_vol - step
             volume_control = NativeVolumeControls()
             volume_control.volume_set(cur_vol)
-        time.sleep(.01)
 
     def run(self):
         while True:
