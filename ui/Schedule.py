@@ -38,7 +38,7 @@ class Schedule(Widget):
             else:
                 lines.append("    " + s.segment_start.strftime(config.dateformat) + "  " + str(s.starts_segment.value))
 
-        content = f"""Time :  {datetime.now().strftime("%H:%M:%S")}\n\n""" + "\n".join(lines)
+        content = f"""Current Time :  {datetime.now().strftime("%H:%M:%S")}\n\n""" + "\n".join(lines)
 
         return Panel(
             content,

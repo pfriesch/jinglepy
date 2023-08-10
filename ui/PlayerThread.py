@@ -1,6 +1,7 @@
 import queue
 import threading
 import time
+from datetime import datetime
 from queue import Queue
 
 import vlc
@@ -18,14 +19,14 @@ class PlayerThread(threading.Thread):
     @classmethod
     def clem_change_vol(cls, start_vol, end_vol):
         diff = start_vol - end_vol
-        steps = 20
+        steps = 4
         step = diff / steps
         cur_vol = start_vol
         for i in range(steps):
             cur_vol = cur_vol - step
             volume_control = NativeVolumeControls()
             volume_control.volume_set(cur_vol)
-            time.sleep(.05)
+        time.sleep(.01)
 
     def run(self):
         while True:
@@ -45,10 +46,11 @@ class PlayerThread(threading.Thread):
                 player.play()
                 time.sleep(next_jingle.duration.total_seconds())
                 player.stop()
+                volume_control.volume_set(0)
 
                 volume_control.play()
                 PlayerThread.clem_change_vol(0, cur_clem_vol)
             except queue.Empty:
                 pass
-            except ValueError:
-                return
+            except ValueError as e:
+                print(e)

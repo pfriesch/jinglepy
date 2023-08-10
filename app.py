@@ -1,77 +1,56 @@
-from textual.app import App
+import datetime
+import sys
+
+from textual.app import App, ComposeResult
 
 from ui.JingleQueue import JingleQueue
-from ui.NativeVolumeControls import NativeVolumeControls
 from ui.Schedule import Schedule
-from textual.widgets import Header, Footer, FileClick, ScrollView, DirectoryTree
+from textual.widgets import Footer
+
+from textual.app import App, ComposeResult
+from textual import events
+from textual.widgets import RichLog
+
+log_filename = "log.log"
+
+
+class PrintLogger(RichLog):
+    """A RichLog which captures printed text."""
+
+    def on_print(self, event: events.Print) -> None:
+        if event.text != "\n":
+            with open(log_filename, 'a') as the_file:
+                the_file.write(f"[{str(datetime.datetime.now())}] {event.text}\n")
 
 
 class Ui(App):
+    BINDINGS = [("q", "quit", "Quit"),
+                ("t", "test", "Test")]
+    CSS_PATH = "jinglepy.css"
 
-    async def on_load(self, event):
-        await self.bind("q", "quit", "Quit", )
+    def compose(self) -> ComposeResult:
+        """Create child widgets for the app."""
+        yield PrintLogger()
+        yield JingleQueue()
+        yield Schedule()
+        yield Footer()
 
-    async def on_mount(self) -> None:
-        await self.view.dock(Footer(), edge="bottom")
+    def test(self):
+        print("Test")
+        pass
 
-        await self.view.dock(JingleQueue(), edge="left", size=60)
-        await self.view.dock(Schedule(), edge="left", size=40)
+    def on_mount(self) -> None:
+        # self.query_one(RichLog).write("RichLog")
+        self.query_one(RichLog).begin_capture_print()
 
 
+try:
+    log_filename = str(datetime.datetime.now()) + "-log.log"
+    app = Ui()
+    # app.begin_capture_print()
+    app.run()
 
-Ui.run(log="textual.log")
 
-#
-# class Ui:
-#     def __init__(self):
-#         self.stdscr = curses.initscr()
-#         curses.noecho()
-#         curses.cbreak()
-#         curses.curs_set(0)
-#         self.stdscr.keypad(1)
-#
-#         self.sss = self.stdscr.getmaxyx()
-#
-#         self.main_window = curses.newwin(self.sss[0] - 10, self.sss[1] - 30, 0, 0)
-#         self.match_window = curses.newwin(self.sss[0] - 10, 30, 0, self.sss[1] - 30)
-#         self.break_panel = curses.panel.new_panel(self.match_window)
-#         self.break_window = curses.newwin(self.sss[0] - 10, 30, 0, self.sss[1] - 30)
-#         self.match_panel = curses.panel.new_panel(self.break_window)
-#
-#         self.break_panel.hide()
-#
-#     def refresh(self):
-#         curses.panel.update_panels()
-#         self.main_window.refresh()
-#         self.match_window.refresh()
-#         self.break_window.refresh()
-#
-#     def swpan(self, from_panel, to_panel):
-#
-#         from_panel.bottom()
-#         from_panel.hide()
-#         to_panel.top()
-#         to_panel.show()
-#
-#     def switch_pan(self):
-#
-#         def switch(from_panel, to_panel):
-#             from_panel.bottom()
-#             from_panel.hide()
-#             to_panel.top()
-#             to_panel.show()
-#
-#         if self.break_panel.hidden():
-#             switch(self.match_panel, self.break_panel)
-#         else:
-#             switch(self.break_panel, self.match_panel)
-#
-#         self.refresh()
-#
-#     def quit_ui(self):
-#         curses.nocbreak()
-#         self.stdscr.keypad(0)
-#         curses.curs_set(1)
-#         curses.echo()
-#         curses.endwin()
-#         exit(0)
+except Exception as e:
+    print(e)
+    sys.exit(3)

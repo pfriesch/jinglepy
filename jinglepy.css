@@ -1,0 +1,19 @@
+UI {
+    layout: horizontal;
+    background: $boost;
+}
+
+Schedule {
+    min-width: 10;
+    max-width: 80;
+    dock: right;
+}
+
+PrintLogger {
+    display: none;
+}
+
+JingleQueue {
+    dock: left;
+}
+

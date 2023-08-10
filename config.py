@@ -11,7 +11,7 @@ breakLength = timedelta(minutes=2)
 
 # Time of day the first match starts. String has to be of the format "dd.mm.yy HH:MM:SS"
 # tournament_start_time = datetime(year=2022, month=8, day=11, hour=21, minute=23, second=00)
-tournament_start_time = datetime.now() - timedelta(seconds=1000)
+tournament_start_time = datetime.now() - timedelta(minutes=2, seconds=30)
 # tournament_start_time = datetime(year=tournament_start_time.year, month=tournament_start_time.month, day=tournament_start_time.day, hour=tournament_start_time.hour, minute=15 * round((float(tournament_start_time.minute) + float(tournament_start_time.second) / 60) / 15) % 60)
 
 slots_count = 9
@@ -33,12 +33,12 @@ jingles = {
 # dateformat = "%H:%M"
 dateformat = "%H:%M:%S"
 
-tournament_start_time = datetime(year=tournament_start_time.year, month=tournament_start_time.month, day=tournament_start_time.day, hour=0, minute=0)
+# tournament_start_time = datetime(year=tournament_start_time.year, month=tournament_start_time.month, day=tournament_start_time.day, hour=0, minute=0)
 
-gameLength = timedelta(minutes=45)
-halfTime = timedelta(minutes=22)
-oneMinLeft = timedelta(minutes=1)
-oneMinToGame = timedelta(minutes=1)
-fiveMinLeft = timedelta(minutes=5)
-fiveMinToGame = timedelta(minutes=5)
-breakLength = timedelta(minutes=15)
+# gameLength = timedelta(minutes=45)
+# halfTime = timedelta(minutes=22)
+# oneMinLeft = timedelta(minutes=1)
+# oneMinToGame = timedelta(minutes=1)
+# fiveMinLeft = timedelta(minutes=5)
+# fiveMinToGame = timedelta(minutes=5)
+# breakLength = timedelta(minutes=15)

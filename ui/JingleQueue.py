@@ -4,7 +4,7 @@ from rich.panel import Panel
 
 from textual.reactive import Reactive
 from textual.widget import Widget
-from queue import Queue
+from queue import Queue, Empty
 
 import config
 from ui.helper import schedule, jingle_schedule, JingleEntry
@@ -34,7 +34,14 @@ class JingleQueue(Widget):
     def render(self) -> Panel:
 
         lines = []
+
         now = datetime.now()
+
+        if not self.ps.is_alive():
+            self.ps = PlayerThread(self.jingle_queue)
+            self.ps.start()
+            lines.append("!!! PLAYER NOT RUNNING RESTART THE APP !!!!")
+
         if len(jingle_schedule) == 0:
             lines.append("FAILED TO LOAD JINGLES")
         for j in jingle_schedule:

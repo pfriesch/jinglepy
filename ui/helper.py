@@ -36,7 +36,6 @@ class JingleEntry:
         return (self.timestamp - self.duration).strftime(config.dateformat) + " - " + self.timestamp.strftime(config.dateformat) + "  " + self.jingle_id
 
 
-
 def _compute_schedule() -> List[ScheduleEntry]:
     schedule = [
         ScheduleEntry(config.tournament_start_time - config.breakLength - config.breakLength, config.tournament_start_time - config.breakLength, TournamentState.NotStarted),
@@ -59,15 +58,15 @@ def _compute_jingle_schedule(schedule: List[ScheduleEntry]) -> List[JingleEntry]
     for schedule_entry in schedule:
 
         if schedule_entry.starts_segment == TournamentState.Break:
-            jingle_schedule.append(JingleEntry("5minToGame", schedule_entry.segment_end - config.fiveMinToGame, timedelta(seconds=librosa.get_duration(filename=config.jingles["5minToGame"]))))
-            jingle_schedule.append(JingleEntry("1minToGame", schedule_entry.segment_end - config.oneMinToGame, timedelta(seconds=librosa.get_duration(filename=config.jingles["1minToGame"]))))
+            jingle_schedule.append(JingleEntry("5minToGame", schedule_entry.segment_end - config.fiveMinToGame, timedelta(seconds=librosa.get_duration(path=config.jingles["5minToGame"]))))
+            jingle_schedule.append(JingleEntry("1minToGame", schedule_entry.segment_end - config.oneMinToGame, timedelta(seconds=librosa.get_duration(path=config.jingles["1minToGame"]))))
 
         elif schedule_entry.starts_segment == TournamentState.Match:
-            jingle_schedule.append(JingleEntry("gamesStarting", schedule_entry.segment_start, timedelta(seconds=librosa.get_duration(filename=config.jingles["gamesStarting"]))))
-            jingle_schedule.append(JingleEntry("halfTime", schedule_entry.segment_start + config.halfTime, timedelta(seconds=librosa.get_duration(filename=config.jingles["halfTime"]))))
-            jingle_schedule.append(JingleEntry("5minLeft", schedule_entry.segment_end - config.fiveMinLeft, timedelta(seconds=librosa.get_duration(filename=config.jingles["5minLeft"]))))
-            jingle_schedule.append(JingleEntry("1minLeft", schedule_entry.segment_end - config.oneMinLeft, timedelta(seconds=librosa.get_duration(filename=config.jingles["1minLeft"]))))
-            jingle_schedule.append(JingleEntry("gameOver", schedule_entry.segment_end, timedelta(seconds=librosa.get_duration(filename=config.jingles["gameOver"]))))
+            jingle_schedule.append(JingleEntry("gamesStarting", schedule_entry.segment_start, timedelta(seconds=librosa.get_duration(path=config.jingles["gamesStarting"]))))
+            jingle_schedule.append(JingleEntry("halfTime", schedule_entry.segment_start + config.halfTime, timedelta(seconds=librosa.get_duration(path=config.jingles["halfTime"]))))
+            jingle_schedule.append(JingleEntry("5minLeft", schedule_entry.segment_end - config.fiveMinLeft, timedelta(seconds=librosa.get_duration(path=config.jingles["5minLeft"]))))
+            jingle_schedule.append(JingleEntry("1minLeft", schedule_entry.segment_end - config.oneMinLeft, timedelta(seconds=librosa.get_duration(path=config.jingles["1minLeft"]))))
+            jingle_schedule.append(JingleEntry("gameOver", schedule_entry.segment_end, timedelta(seconds=librosa.get_duration(path=config.jingles["gameOver"]))))
 
     prev_start = datetime.fromtimestamp(0)
     prev_end = datetime.fromtimestamp(0)
