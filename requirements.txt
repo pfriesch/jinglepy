@@ -1,0 +1,5 @@
+python-vlc
+textual~=0.32.0
+
+rich~=13.5.2
+librosa~=0.10.0.post2
